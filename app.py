@@ -4,6 +4,7 @@ from fastapi.templating import Jinja2Templates
 from typing import List
 from uuid import uuid4
 import os
+from rag import embed_pdf
 
 app = FastAPI()
 
@@ -32,7 +33,12 @@ async def read_form(request: Request):
 
 
 @app.post("/upload", response_class=HTMLResponse)
-async def upload_files(request: Request, files: List[UploadFile] = File(...)):
+async def upload_files(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    collection_name: str = Form(...),
+):
+
     error = None
     success_files = []
     for file in files:
@@ -49,6 +55,8 @@ async def upload_files(request: Request, files: List[UploadFile] = File(...)):
             with open(save_path, "wb") as f:
                 f.write(contents)
             success_files.append(filename)
+
+            embed_pdf(collection_name, save_path)
         else:
             error = f"檔案 {file.filename} 不允許的檔案類型"
             return templates.TemplateResponse(
