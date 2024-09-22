@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>上傳成功 - OneLab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        .banner {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .tabs {
+            overflow: hidden;
+            background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+        }
+        .tabs a {
+            background-color: inherit;
+            padding: 14px 16px;
+            text-align: center;
+            text-decoration: none;
+            color: black;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+        .tabs a:hover {
+            background-color: #ddd;
+        }
+        .tabs a.active {
+            background-color: #ccc;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <h1>OneLab</h1>
+</div>
+
+<div class="tabs">
+    <a href="/upload" class="tablink active">上傳 PDF 檔案</a>
+    <a href="/chat" class="tablink">聊天機器人</a>
+</div>
+
+<h1>檔案上傳成功！</h1>
+<p>以下檔案已成功上傳：</p>
+<ul>
+    {% for filename in filenames %}
+    <li>{{ filename }}</li>
+    {% endfor %}
+</ul>
+<a href="/upload">返回上傳頁面</a>
+
+</body>
+</html>

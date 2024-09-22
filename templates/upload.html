@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>上傳 PDF 檔案 - OneLab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .banner {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .tabs {
+            overflow: hidden;
+            background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+        }
+        .tabs a {
+            background-color: inherit;
+            padding: 14px 16px;
+            text-align: center;
+            text-decoration: none;
+            color: black;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+        .tabs a:hover {
+            background-color: #ddd;
+        }
+        .tabs a.active {
+            background-color: #ccc;
+        }
+        #upload-area {
+            border: 2px dashed #ccc;
+            width: 50%;
+            margin: 20px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        #upload-area.hover {
+            border-color: #333;
+        }
+        #file-input {
+            display: none;
+        }
+        #upload-area p {
+            margin: 0;
+            font-size: 16px;
+        }
+        #max-size {
+            text-align: center;
+            margin-top: 10px;
+        }
+        .error {
+            color: red;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <h1>OneLab</h1>
+</div>
+
+<div class="tabs">
+    <a href="/upload" class="tablink active">上傳 PDF 檔案</a>
+    <a href="/chat" class="tablink">聊天機器人</a>
+</div>
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+<form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+    <div id="upload-area">
+        <p>將檔案拖曳到此處上傳</p>
+        <p>或</p>
+        <button type="button" onclick="document.getElementById('file-input').click();">選擇檔案</button>
+        <input type="file" id="file-input" name="files" multiple accept=".pdf">
+    </div>
+</form>
+
+<p id="max-size">最大上傳檔案大小：20MB</p>
+
+<script>
+    var uploadArea = document.getElementById('upload-area');
+    var fileInput = document.getElementById('file-input');
+    var form = document.getElementById('upload-form');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
+        uploadArea.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    ['dragenter', 'dragover'].forEach(function(eventName) {
+        uploadArea.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(function(eventName) {
+        uploadArea.addEventListener(eventName, unhighlight, false);
+    });
+
+    uploadArea.addEventListener('drop', handleDrop, false);
+
+    function preventDefaults (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    function highlight(e) {
+        uploadArea.classList.add('hover');
+    }
+
+    function unhighlight(e) {
+        uploadArea.classList.remove('hover');
+    }
+
+    function handleDrop(e) {
+        var dt = e.dataTransfer;
+        var files = dt.files;
+
+        fileInput.files = files;
+        form.submit();
+    }
+
+    fileInput.addEventListener('change', function() {
+        form.submit();
+    });
+
+</script>
+
+</body>
+</html>

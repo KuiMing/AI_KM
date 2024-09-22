@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天機器人 - OneLab</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .banner {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        .tabs {
+            overflow: hidden;
+            background-color: #f1f1f1;
+            display: flex;
+            justify-content: center;
+        }
+        .tabs a {
+            background-color: inherit;
+            padding: 14px 16px;
+            text-align: center;
+            text-decoration: none;
+            color: black;
+            border: none;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 17px;
+        }
+        .tabs a:hover {
+            background-color: #ddd;
+        }
+        .tabs a.active {
+            background-color: #ccc;
+        }
+        /* 嵌入的 iframe 样式 */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 120px); /* 减去 banner 和 tabs 的高度 */
+        }
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <h1>OneLab</h1>
+</div>
+
+<div class="tabs">
+    <a href="/upload" class="tablink">上傳 PDF 檔案</a>
+    <a href="/chat" class="tablink active">聊天機器人</a>
+</div>
+
+<div class="iframe-container">
+    <iframe src="http://localhost:8501/" frameborder="0"></iframe>
+</div>
+
+</body>
+</html>
