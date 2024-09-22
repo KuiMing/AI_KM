@@ -77,8 +77,12 @@ def main():
     main function for the Streamlit app.
     """
 
-    collection_name = st.sidebar.text_input(
-        "請輸入要查詢的 Collection 名稱", value="DefaultCollection"
+    # collection_name = st.sidebar.text_input(
+    #     "請輸入要查詢的 Collection 名稱", value="DefaultCollection"
+    # )
+    collections = ["labor_docs", "T-cross", "test"]
+    collection_name = st.sidebar.selectbox(
+        "請選擇要查詢的 Collection 名稱", options=collections
     )
 
     # session state
