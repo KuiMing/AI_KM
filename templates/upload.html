@@ -8,7 +8,7 @@
             font-family: Arial, sans-serif;
         }
         .banner {
-            background-color: #4CAF50;
+            background-color: #EC632B;
             color: white;
             padding: 15px;
             text-align: center;
@@ -61,6 +61,23 @@
             color: red;
             text-align: center;
         }
+        .collection-input {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .collection-input input {
+            padding: 10px;
+            font-size: 16px;
+            width: 50%;
+        }
+        .submit-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .submit-button button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
@@ -79,11 +96,20 @@
 {% endif %}
 
 <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+    <div class="collection-input">
+        <label for="collection-name">文件類別：</label><br>
+        <input type="text" id="collection-name" name="collection_name" placeholder="請輸入集合名稱" required>
+    </div>
+
     <div id="upload-area">
         <p>將檔案拖曳到此處上傳</p>
         <p>或</p>
         <button type="button" onclick="document.getElementById('file-input').click();">選擇檔案</button>
         <input type="file" id="file-input" name="files" multiple accept=".pdf">
+    </div>
+
+    <div class="submit-button">
+        <button type="submit">上傳並轉換成向量</button>
     </div>
 </form>
 
@@ -127,12 +153,8 @@
         var files = dt.files;
 
         fileInput.files = files;
-        form.submit();
     }
 
-    fileInput.addEventListener('change', function() {
-        form.submit();
-    });
 
 </script>
 
