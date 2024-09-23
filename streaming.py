@@ -16,8 +16,8 @@ from dotenv import dotenv_values
 config = dotenv_values(".env")
 
 # app config
-st.set_page_config(page_title="Streaming bot", page_icon="🤖")
-st.title("Streaming bot")
+st.set_page_config(page_title="RAG bot", page_icon="🤖")
+st.title("RAG bot")
 
 
 def get_response(
@@ -80,7 +80,9 @@ def main():
     # collection_name = st.sidebar.text_input(
     #     "請輸入要查詢的 Collection 名稱", value="DefaultCollection"
     # )
-    collections = ["labor_docs", "T-cross", "test"]
+    client = QdrantClient(url="http://localhost:6333")
+    collection_list = client.get_collections()
+    collections = [i.name for i in collection_list.collections]
     collection_name = st.sidebar.selectbox(
         "請選擇要查詢的 Collection 名稱", options=collections
     )
