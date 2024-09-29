@@ -1,12 +1,27 @@
+"""
+This module contains the code to embed a PDF file into a Qdrant collection.
+"""
+
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_experimental.text_splitter import SemanticChunker
-
+from qdrant_client import QdrantClient
 from dotenv import dotenv_values
 
 
-def embed_pdf(collection, pdf_path):
+def embed_pdf(collection, pdf_path, overwrite=False):
+    """
+    Embeds the text from a PDF file into a Qdrant collection.
+    Args:
+        collection: The name of the Qdrant collection to create.
+        pdf_path: The path to the PDF file to embed.
+        overwrite: Whether to overwrite the existing collection with the same name.
+    """
+    if overwrite:
+        client = QdrantClient(url="http://localhost:6333")
+        client.delete_collection(collection)
+
     config = dotenv_values(".env")
 
     embedding_llm = AzureOpenAIEmbeddings(
