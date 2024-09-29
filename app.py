@@ -8,10 +8,13 @@ from uuid import uuid4
 from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from qdrant_client import QdrantClient
 from rag import embed_pdf
 
 app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 templates = Jinja2Templates(directory="templates")
 
