@@ -38,6 +38,10 @@
         .tabs a.active {
             background-color: #ccc;
         }
+        .overwrite-checkbox {
+            text-align: center;
+            margin-top: 20px;
+        }
         #upload-area {
             border: 2px dashed #ccc;
             width: 50%;
@@ -64,14 +68,35 @@
             text-align: center;
         }
         .collection-input {
-            text-align: center;
-            margin-top: 20px;
+            width: 50%;
+            margin: 20px auto;
         }
-        .collection-input input {
+
+        .collection-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .collection-name {
+            flex: 1;
+        }
+
+        .collection-name label {
+            margin-right: 5px;
+        }
+
+        .collection-name input {
+            width: 100%;
             padding: 10px;
             font-size: 16px;
-            width: 50%;
         }
+
+        .overwrite-checkbox {
+            display: flex;
+            align-items: center;
+            margin-left: 40px;
+        }
+
         .submit-button {
             margin-top: 20px;
             text-align: center;
@@ -92,7 +117,7 @@
             margin: 5px 0;
         }
         #loading-overlay {
-            display: none; /* 默认隐藏 */
+            display: none; 
             position: fixed;
             top: 0;
             left: 0;
@@ -133,22 +158,31 @@
 {% endif %}
 
 <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
-    <div class="collection-input">
-        <label for="collection-name">集合名稱：</label><br>
-        <input list="collection-names" type="text" id="collection-name" name="collection_name" placeholder="請輸入集合名稱" required>
-        <datalist id="collection-names">
-            {% for collection in collections %}
-                <option value="{{ collection }}">{{ collection }}</option>
-            {% endfor %}
-        </datalist>
-    </div>
 
+    <div class="collection-input">
+        <div class="collection-row">
+            <div class="collection-name">
+                <label for="collection-name">資料集名稱：</label>
+                <input list="collection-names" type="text" id="collection-name" name="collection_name" placeholder="請自行定義資料集名稱" required>
+                <datalist id="collection-names">
+                    {% for collection in collections %}
+                        <option value="{{ collection }}">{{ collection }}</option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="overwrite-checkbox">
+                <input type="checkbox" id="overwrite" name="overwrite" value="yes">
+                <label for="overwrite">覆蓋現有的資料集</label>
+            </div>
+        </div>
+    </div>
     <div id="upload-area">
         <p>將檔案拖曳到此處上傳</p>
         <p>或</p>
         <button type="button" onclick="document.getElementById('file-input').click();">選擇檔案</button>
         <input type="file" id="file-input" name="files" multiple accept=".pdf">
     </div>
+    
     <div id="file-list"></div>
     <div class="submit-button">
         <button type="submit">上傳並轉換成向量</button>
