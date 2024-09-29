@@ -80,6 +80,17 @@
             padding: 10px 20px;
             font-size: 16px;
         }
+        #file-list {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #file-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        #file-list li {
+            margin: 5px 0;
+        }
     </style>
 </head>
 <body>
@@ -115,7 +126,7 @@
         <button type="button" onclick="document.getElementById('file-input').click();">選擇檔案</button>
         <input type="file" id="file-input" name="files" multiple accept=".pdf">
     </div>
-
+    <div id="file-list"></div>
     <div class="submit-button">
         <button type="submit">上傳並轉換成向量</button>
     </div>
@@ -127,6 +138,8 @@
     var uploadArea = document.getElementById('upload-area');
     var fileInput = document.getElementById('file-input');
     var form = document.getElementById('upload-form');
+    var fileList = document.getElementById('file-list');
+
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
         uploadArea.addEventListener(eventName, preventDefaults, false);
@@ -161,8 +174,28 @@
         var files = dt.files;
 
         fileInput.files = files;
+        updateFileList();
     }
 
+    function updateFileList() {
+        var files = fileInput.files;
+        fileList.innerHTML = '';
+        if (files.length === 0) {
+            fileList.innerHTML = '<p>尚未選擇檔案</p>';
+        } else {
+            var list = document.createElement('ul');
+            for (var i = 0; i < files.length; i++) {
+                var item = document.createElement('li');
+                item.textContent = files[i].name;
+                list.appendChild(item);
+            }
+            fileList.appendChild(list);
+        }
+    }
+
+    fileInput.addEventListener('change', function() {
+        updateFileList();
+    });
 
 </script>
 
