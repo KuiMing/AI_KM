@@ -91,6 +91,29 @@
         #file-list li {
             margin: 5px 0;
         }
+        #loading-overlay {
+            display: none; /* 默认隐藏 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            z-index: 1000;
+            text-align: center;
+        }
+        #loading-overlay img {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        #loading-overlay p {
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
@@ -133,12 +156,17 @@
 </form>
 
 <p id="max-size">最大上傳檔案大小：20MB</p>
+<div id="loading-overlay">
+    <img src="/static/loading.gif" alt="Loading...">
+</div>
 
 <script>
     var uploadArea = document.getElementById('upload-area');
     var fileInput = document.getElementById('file-input');
     var form = document.getElementById('upload-form');
     var fileList = document.getElementById('file-list');
+    var loadingOverlay = document.getElementById('loading-overlay');
+    var submitButton = document.querySelector('.submit-button button');
 
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
@@ -195,6 +223,12 @@
 
     fileInput.addEventListener('change', function() {
         updateFileList();
+    });
+
+    form.addEventListener('submit', function(e) {
+        loadingOverlay.style.display = 'block';
+
+        submitButton.disabled = true;
     });
 
 </script>
