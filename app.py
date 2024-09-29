@@ -1,9 +1,14 @@
+"""
+FastAPI app for uploading PDF files and embedding them into Qdrant.
+"""
+
+from typing import List
+import os
+from uuid import uuid4
 from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
-from typing import List
-from uuid import uuid4
-import os
+from qdrant_client import QdrantClient
 from rag import embed_pdf
 
 app = FastAPI()
@@ -29,7 +34,12 @@ async def index(request: Request):
 
 @app.get("/upload", response_class=HTMLResponse)
 async def read_form(request: Request):
-    return templates.TemplateResponse("upload.html", {"request": request})
+    client = QdrantClient(url="http://localhost:6333")
+    collection_list = client.get_collections()
+    collections = [i.name for i in collection_list.collections]
+    return templates.TemplateResponse(
+        "upload.html", {"request": request, "collections": collections}
+    )
 
 
 @app.post("/upload", response_class=HTMLResponse)
