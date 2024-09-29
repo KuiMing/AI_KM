@@ -100,8 +100,13 @@
 
 <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
     <div class="collection-input">
-        <label for="collection-name">文件類別：</label><br>
-        <input type="text" id="collection-name" name="collection_name" placeholder="請輸入集合名稱" required>
+        <label for="collection-name">集合名稱：</label><br>
+        <input list="collection-names" type="text" id="collection-name" name="collection_name" placeholder="請輸入集合名稱" required>
+        <datalist id="collection-names">
+            {% for collection in collections %}
+                <option value="{{ collection }}">{{ collection }}</option>
+            {% endfor %}
+        </datalist>
     </div>
 
     <div id="upload-area">
