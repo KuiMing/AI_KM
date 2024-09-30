@@ -84,7 +84,7 @@ def main():
     collection_list = client.get_collections()
     collections = [i.name for i in collection_list.collections]
     collection_name = st.sidebar.selectbox(
-        "請選擇要查詢的 Collection 名稱", options=collections
+        "請選擇要查詢的資料集名稱", options=collections
     )
 
     # session state
