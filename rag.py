@@ -6,8 +6,13 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import AzureOpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain_experimental.text_splitter import SemanticChunker
-from qdrant_client import QdrantClient
 from dotenv import dotenv_values
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import (
+    Filter,
+    FieldCondition,
+    MatchValue,
+)
 
 
 def embed_pdf(
@@ -23,7 +28,17 @@ def embed_pdf(
     """
     if overwrite:
         client = QdrantClient(url="http://localhost:6333")
-        client.delete_collection(collection)
+        # client.delete_collection(collection)
+        filter_condition = Filter(
+            must=[
+                FieldCondition(key="metadata.dataset", match=MatchValue(value=dataset)),
+                FieldCondition(
+                    key="metadata.file_name", match=MatchValue(value=pdf_path)
+                ),
+            ]
+        )
+        client.delete(collection_name=collection, points_selector=filter_condition)
+        print(f"Deleted file {pdf_path} from collection {collection}")
 
     config = dotenv_values(".env")
 
