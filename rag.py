@@ -35,13 +35,22 @@ def embed_pdf(collection, pdf_path, overwrite=False):
 
     loader = PyPDFLoader(pdf_path)
     pages = loader.load_and_split()
-    splits = text_splitter.create_documents([page.page_content for page in pages])
+    splits = text_splitter.create_documents(
+        texts=[page.page_content for page in pages],
+        metadatas=[
+            {
+                "file_name": pdf_path,
+                "dataset": collection,
+            }
+            for page in pages
+        ],
+    )
 
     qdrant = QdrantVectorStore.from_documents(
         splits,
         embedding=embedding_llm,
         url="http://localhost:6333",
-        collection_name=collection,
+        collection_name="test",
     )
 
     return qdrant
