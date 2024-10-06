@@ -5,3 +5,4 @@ qdrant_storage/
 .pytest_cache/
 .venv/
 uploads/
+.deleted/
