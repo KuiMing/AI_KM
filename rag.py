@@ -10,12 +10,15 @@ from qdrant_client import QdrantClient
 from dotenv import dotenv_values
 
 
-def embed_pdf(collection, pdf_path, overwrite=False):
+def embed_pdf(
+    dataset: str, pdf_path: str, collection: str = "test", overwrite: bool = False
+):
     """
     Embeds the text from a PDF file into a Qdrant collection.
     Args:
-        collection: The name of the Qdrant collection to create.
+        dataset: The name of the dataset to use for reference.
         pdf_path: The path to the PDF file to embed.
+        collection: The name of the Qdrant collection to create.
         overwrite: Whether to overwrite the existing collection with the same name.
     """
     if overwrite:
@@ -40,7 +43,7 @@ def embed_pdf(collection, pdf_path, overwrite=False):
         metadatas=[
             {
                 "file_name": pdf_path,
-                "dataset": collection,
+                "dataset": dataset,
             }
             for page in pages
         ],
@@ -50,7 +53,7 @@ def embed_pdf(collection, pdf_path, overwrite=False):
         splits,
         embedding=embedding_llm,
         url="http://localhost:6333",
-        collection_name="test",
+        collection_name=collection,
     )
 
     return qdrant
