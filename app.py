@@ -4,12 +4,10 @@ FastAPI app for uploading PDF files and embedding them into Qdrant.
 
 from typing import List, Optional
 import os
-from uuid import uuid4
 from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from qdrant_client import QdrantClient
 from rag import embed_pdf
 
 app = FastAPI()
@@ -40,9 +38,11 @@ async def index(request: Request):
 @app.get("/upload", response_class=HTMLResponse)
 async def read_form(request: Request):
     """Display upload form"""
-    client = QdrantClient(url="http://localhost:6333")
-    collection_list = client.get_collections()
-    collections = [i.name for i in collection_list.collections]
+    collections = [
+        name
+        for name in os.listdir(UPLOAD_FOLDER)
+        if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))
+    ]
     return templates.TemplateResponse(
         "upload.html", {"request": request, "collections": collections}
     )
@@ -68,9 +68,11 @@ async def upload_files(
                     "upload.html", {"request": request, "error": error}
                 )
             filename = file.filename
-            unique_filename = f"{uuid4().hex}_{filename}"
             overwrite_flag = overwrite == "yes"
-            save_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+            folder = os.path.join(UPLOAD_FOLDER, collection_name)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            save_path = os.path.join(folder, filename)
             with open(save_path, "wb") as f:
                 f.write(contents)
             success_files.append(filename)
