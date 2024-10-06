@@ -28,15 +28,19 @@ st.title("RAG bot")
 
 
 def get_response(
-    user_query: str, chat_history: List[schema.HumanMessage], collection_name: str
+    user_query: str,
+    chat_history: List[schema.HumanMessage],
+    dataset_name: str,
+    collection_name: str = "test",
 ):
     """
     Generates a response to the user's query based on the provided
-    chat history and a specified document collection.
+    chat history and a specified dataset.
     Args:
         user_query: The query from the user.
         chat_history: The history of the chat as a list of HumanMessage objects.
-        collection_name: The name of the document collection to use for reference.
+        dataset_name: The name of the dataset to use for reference.
+        collection_name: The name of the Qdrant collection to use for retrieval.
     Returns:
         generator: A generator that streams the response to the user's query.
     Raises:
@@ -70,7 +74,7 @@ def get_response(
     question_answer_chain = create_stuff_documents_chain(generator_llm, prompt)
     client = QdrantClient(url="http://localhost:6333")
     qdrant = QdrantVectorStore(
-        client=client, collection_name="test", embedding=embedding_llm
+        client=client, collection_name=collection_name, embedding=embedding_llm
     )
     retriever = qdrant.as_retriever(
         search_kwargs=dict(
@@ -79,7 +83,7 @@ def get_response(
                 must=[
                     qdrant_models.FieldCondition(
                         key="metadata.dataset",
-                        match=qdrant_models.MatchValue(value=collection_name),
+                        match=qdrant_models.MatchValue(value=dataset_name),
                     )
                 ]
             ),
@@ -96,20 +100,12 @@ def main():
     main function for the Streamlit app.
     """
 
-    # collection_name = st.sidebar.text_input(
-    #     "請輸入要查詢的 Collection 名稱", value="DefaultCollection"
-    # )
-    # client = QdrantClient(url="http://localhost:6333")
-    # collection_list = client.get_collections()
-    # collections = [i.name for i in collection_list.collections]
-    collections = [
+    dataset = [
         name
         for name in os.listdir(UPLOAD_FOLDER)
         if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))
     ]
-    collection_name = st.sidebar.selectbox(
-        "請選擇要查詢的資料集名稱", options=collections
-    )
+    dataset_name = st.sidebar.selectbox("請選擇要查詢的資料集名稱", options=dataset)
 
     # session state
     if "chat_history" not in st.session_state:
@@ -139,7 +135,7 @@ def main():
                 get_response(
                     user_query=user_query,
                     chat_history=st.session_state.chat_history,
-                    collection_name=collection_name,
+                    dataset_name=dataset_name,
                 )
             )
 
