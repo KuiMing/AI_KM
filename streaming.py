@@ -1,4 +1,9 @@
+"""
+Chatbot using RAG (Retrieval Augmented Generation) model.
+"""
+
 from typing import List
+import os
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,12 +14,14 @@ from langchain import schema
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from qdrant_client import QdrantClient
+from qdrant_client.http import models as qdrant_models
 from langchain_qdrant import QdrantVectorStore
 from dotenv import dotenv_values
 
 
 config = dotenv_values(".env")
 
+UPLOAD_FOLDER = "uploads/"
 # app config
 st.set_page_config(page_title="RAG bot", page_icon="🤖")
 st.title("RAG bot")
@@ -63,9 +70,21 @@ def get_response(
     question_answer_chain = create_stuff_documents_chain(generator_llm, prompt)
     client = QdrantClient(url="http://localhost:6333")
     qdrant = QdrantVectorStore(
-        client=client, collection_name=collection_name, embedding=embedding_llm
+        client=client, collection_name="test", embedding=embedding_llm
     )
-    retriever = qdrant.as_retriever(search_kwargs={"k": 3})
+    retriever = qdrant.as_retriever(
+        search_kwargs=dict(
+            k=3,
+            filter=qdrant_models.Filter(
+                must=[
+                    qdrant_models.FieldCondition(
+                        key="metadata.dataset",
+                        match=qdrant_models.MatchValue(value=collection_name),
+                    )
+                ]
+            ),
+        )
+    )
 
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
     chain = rag_chain.pick("answer")
@@ -80,9 +99,14 @@ def main():
     # collection_name = st.sidebar.text_input(
     #     "請輸入要查詢的 Collection 名稱", value="DefaultCollection"
     # )
-    client = QdrantClient(url="http://localhost:6333")
-    collection_list = client.get_collections()
-    collections = [i.name for i in collection_list.collections]
+    # client = QdrantClient(url="http://localhost:6333")
+    # collection_list = client.get_collections()
+    # collections = [i.name for i in collection_list.collections]
+    collections = [
+        name
+        for name in os.listdir(UPLOAD_FOLDER)
+        if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))
+    ]
     collection_name = st.sidebar.selectbox(
         "請選擇要查詢的資料集名稱", options=collections
     )
