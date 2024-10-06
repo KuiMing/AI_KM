@@ -38,13 +38,13 @@ async def index(request: Request):
 @app.get("/upload", response_class=HTMLResponse)
 async def read_form(request: Request):
     """Display upload form"""
-    collections = [
+    datasets = [
         name
         for name in os.listdir(UPLOAD_FOLDER)
         if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))
     ]
     return templates.TemplateResponse(
-        "upload.html", {"request": request, "collections": collections}
+        "upload.html", {"request": request, "datasets": datasets}
     )
 
 
@@ -52,7 +52,7 @@ async def read_form(request: Request):
 async def upload_files(
     request: Request,
     files: List[UploadFile] = File(...),
-    collection_name: str = Form(...),
+    dataset_name: str = Form(...),
     overwrite: Optional[str] = Form(None),
 ):
     """Upload PDF files and embed them into Qdrant"""
@@ -69,7 +69,7 @@ async def upload_files(
                 )
             filename = file.filename
             overwrite_flag = overwrite == "yes"
-            folder = os.path.join(UPLOAD_FOLDER, collection_name)
+            folder = os.path.join(UPLOAD_FOLDER, dataset_name)
             if not os.path.exists(folder):
                 os.makedirs(folder)
             save_path = os.path.join(folder, filename)
@@ -78,7 +78,7 @@ async def upload_files(
             success_files.append(filename)
 
             embed_pdf(
-                collection=collection_name, pdf_path=save_path, overwrite=overwrite_flag
+                dataset=dataset_name, pdf_path=save_path, overwrite=overwrite_flag
             )
         else:
             error = f"檔案 {file.filename} 不允許的檔案類型"
