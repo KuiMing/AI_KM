@@ -67,25 +67,25 @@
             color: red;
             text-align: center;
         }
-        .collection-input {
+        .dataset-input {
             width: 50%;
             margin: 20px auto;
         }
 
-        .collection-row {
+        .dataset-row {
             display: flex;
             align-items: center;
         }
 
-        .collection-name {
+        .dataset-name {
             flex: 1;
         }
 
-        .collection-name label {
+        .dataset-name label {
             margin-right: 5px;
         }
 
-        .collection-name input {
+        .dataset-name input {
             width: 100%;
             padding: 10px;
             font-size: 16px;
@@ -159,14 +159,14 @@
 
 <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
 
-    <div class="collection-input">
-        <div class="collection-row">
-            <div class="collection-name">
-                <label for="collection-name">資料集名稱：</label>
-                <input list="collection-names" type="text" id="collection-name" name="collection_name" placeholder="請自行定義資料集名稱" required>
-                <datalist id="collection-names">
-                    {% for collection in collections %}
-                        <option value="{{ collection }}">{{ collection }}</option>
+    <div class="dataset-input">
+        <div class="dataset-row">
+            <div class="dataset-name">
+                <label for="dataset-name">資料集名稱：</label>
+                <input list="dataset-names" type="text" id="dataset-name" name="dataset_name" placeholder="請自行定義資料集名稱" required>
+                <datalist id="dataset-names">
+                    {% for dataset in datasets %}
+                        <option value="{{ dataset }}">{{ dataset }}</option>
                     {% endfor %}
                 </datalist>
             </div>
