@@ -8,11 +8,11 @@ from fastapi import FastAPI, Request, File, UploadFile, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
-from rag import embed_pdf
+from rag import QdrantRAGBot
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
+rag_bot = QdrantRAGBot()
 
 templates = Jinja2Templates(directory="templates")
 
@@ -77,7 +77,7 @@ async def upload_files(
                 f.write(contents)
             success_files.append(filename)
 
-            embed_pdf(
+            rag_bot.embed_pdf(
                 dataset=dataset_name, pdf_path=save_path, overwrite=overwrite_flag
             )
         else:

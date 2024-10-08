@@ -2,10 +2,17 @@
 This module contains the code to embed a PDF file into a Qdrant collection.
 """
 
+from typing import List
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_openai import AzureOpenAIEmbeddings
+from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
 from langchain_qdrant import QdrantVectorStore
 from langchain_experimental.text_splitter import SemanticChunker
+from langchain_core.prompts import ChatPromptTemplate
+
+# pylint: disable=no-name-in-module
+from langchain import schema
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 from dotenv import dotenv_values
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
@@ -15,60 +22,135 @@ from qdrant_client.http.models import (
 )
 
 
-def embed_pdf(
-    dataset: str, pdf_path: str, collection: str = "test", overwrite: bool = False
-):
-    """
-    Embeds the text from a PDF file into a Qdrant collection.
-    Args:
-        dataset: The name of the dataset to use for reference.
-        pdf_path: The path to the PDF file to embed.
-        collection: The name of the Qdrant collection to create.
-        overwrite: Whether to overwrite the existing collection with the same name.
-    """
-    if overwrite:
-        client = QdrantClient(url="http://localhost:6333")
-        # client.delete_collection(collection)
-        filter_condition = Filter(
-            must=[
-                FieldCondition(key="metadata.dataset", match=MatchValue(value=dataset)),
-                FieldCondition(
-                    key="metadata.file_name", match=MatchValue(value=pdf_path)
-                ),
+class QdrantRAGBot:
+    def __init__(
+        self, config_path: str = ".env", qdrant_url: str = "http://localhost:6333"
+    ):
+        config = dotenv_values(config_path)
+        self.qdrant_url = qdrant_url
+        self.embedding_llm = AzureOpenAIEmbeddings(
+            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
+            azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
+            api_key=config.get("AZURE_OPENAI_KEY"),
+            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
+        )
+        self.generator_llm = AzureChatOpenAI(
+            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
+            azure_deployment=config.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
+            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
+            api_key=config.get("AZURE_OPENAI_KEY"),
+            streaming=True,
+        )
+
+    def embed_pdf(
+        self,
+        dataset: str,
+        pdf_path: str,
+        collection: str = "test",
+        overwrite: bool = False,
+    ):
+        """
+        Embeds the text from a PDF file into a Qdrant collection.
+        Args:
+            dataset: The name of the dataset to use for reference.
+            pdf_path: The path to the PDF file to embed.
+            collection: The name of the Qdrant collection to create.
+            overwrite: Whether to overwrite the existing collection with the same name.
+        """
+        if overwrite:
+            client = QdrantClient(url="http://localhost:6333")
+            # client.delete_collection(collection)
+            filter_condition = Filter(
+                must=[
+                    FieldCondition(
+                        key="metadata.dataset", match=MatchValue(value=dataset)
+                    ),
+                    FieldCondition(
+                        key="metadata.file_name", match=MatchValue(value=pdf_path)
+                    ),
+                ]
+            )
+            client.delete(collection_name=collection, points_selector=filter_condition)
+            print(f"Deleted file {pdf_path} from collection {collection}")
+
+        text_splitter = SemanticChunker(
+            self.embedding_llm, breakpoint_threshold_type="gradient"
+        )
+
+        loader = PyPDFLoader(pdf_path)
+        pages = loader.load_and_split()
+        splits = text_splitter.create_documents(
+            texts=[page.page_content for page in pages],
+            metadatas=[
+                {
+                    "file_name": pdf_path,
+                    "dataset": dataset,
+                }
+                for page in pages
+            ],
+        )
+
+        qdrant = QdrantVectorStore.from_documents(
+            splits,
+            embedding=self.embedding_llm,
+            url=self.qdrant_url,
+            collection_name=collection,
+        )
+
+        return qdrant
+
+    def get_response(
+        self,
+        user_query: str,
+        chat_history: List[schema.HumanMessage],
+        dataset_name: str,
+        collection_name: str = "test",
+    ):
+        """
+        Generates a response to the user's query based on the provided
+        chat history and a specified dataset.
+        Args:
+            user_query: The query from the user.
+            chat_history: The history of the chat as a list of HumanMessage objects.
+            dataset_name: The name of the dataset to use for reference.
+            collection_name: The name of the Qdrant collection to use for retrieval.
+        Returns:
+            generator: A generator that streams the response to the user's query.
+        Raises:
+            ValueError: If any required configuration is missing or invalid.
+        """
+        system_prompt = (
+            "你是一位專門根據文件回答問題的 AI 助手。如果你無法從文件得到答案，請說你不知道。"
+            "請根據以下參考資料回答問題："
+            "歷史紀錄：{chat_history}"
+            "參考資料：{context}"
+        )
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                ("human", "{input}"),
             ]
         )
-        client.delete(collection_name=collection, points_selector=filter_condition)
-        print(f"Deleted file {pdf_path} from collection {collection}")
 
-    config = dotenv_values(".env")
+        question_answer_chain = create_stuff_documents_chain(self.generator_llm, prompt)
+        client = QdrantClient(url=self.qdrant_url)
+        qdrant = QdrantVectorStore(
+            client=client, collection_name=collection_name, embedding=self.embedding_llm
+        )
+        retriever = qdrant.as_retriever(
+            search_kwargs=dict(
+                k=3,
+                filter=Filter(
+                    must=[
+                        FieldCondition(
+                            key="metadata.dataset",
+                            match=MatchValue(value=dataset_name),
+                        )
+                    ]
+                ),
+            )
+        )
 
-    embedding_llm = AzureOpenAIEmbeddings(
-        azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
-        azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
-        api_key=config.get("AZURE_OPENAI_KEY"),
-        openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
-    )
-
-    text_splitter = SemanticChunker(embedding_llm, breakpoint_threshold_type="gradient")
-
-    loader = PyPDFLoader(pdf_path)
-    pages = loader.load_and_split()
-    splits = text_splitter.create_documents(
-        texts=[page.page_content for page in pages],
-        metadatas=[
-            {
-                "file_name": pdf_path,
-                "dataset": dataset,
-            }
-            for page in pages
-        ],
-    )
-
-    qdrant = QdrantVectorStore.from_documents(
-        splits,
-        embedding=embedding_llm,
-        url="http://localhost:6333",
-        collection_name=collection,
-    )
-
-    return qdrant
+        rag_chain = create_retrieval_chain(retriever, question_answer_chain)
+        chain = rag_chain.pick("answer")
+        return chain.stream({"input": user_query, "chat_history": chat_history})
