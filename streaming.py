@@ -1,4 +1,9 @@
+"""
+Chatbot using RAG (Retrieval Augmented Generation) model.
+"""
+
 from typing import List
+import os
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,27 +14,33 @@ from langchain import schema
 from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from qdrant_client import QdrantClient
+from qdrant_client.http import models as qdrant_models
 from langchain_qdrant import QdrantVectorStore
 from dotenv import dotenv_values
 
 
 config = dotenv_values(".env")
 
+UPLOAD_FOLDER = "uploads/"
 # app config
 st.set_page_config(page_title="RAG bot", page_icon="🤖")
 st.title("RAG bot")
 
 
 def get_response(
-    user_query: str, chat_history: List[schema.HumanMessage], collection_name: str
+    user_query: str,
+    chat_history: List[schema.HumanMessage],
+    dataset_name: str,
+    collection_name: str = "test",
 ):
     """
     Generates a response to the user's query based on the provided
-    chat history and a specified document collection.
+    chat history and a specified dataset.
     Args:
         user_query: The query from the user.
         chat_history: The history of the chat as a list of HumanMessage objects.
-        collection_name: The name of the document collection to use for reference.
+        dataset_name: The name of the dataset to use for reference.
+        collection_name: The name of the Qdrant collection to use for retrieval.
     Returns:
         generator: A generator that streams the response to the user's query.
     Raises:
@@ -65,7 +76,19 @@ def get_response(
     qdrant = QdrantVectorStore(
         client=client, collection_name=collection_name, embedding=embedding_llm
     )
-    retriever = qdrant.as_retriever(search_kwargs={"k": 3})
+    retriever = qdrant.as_retriever(
+        search_kwargs=dict(
+            k=3,
+            filter=qdrant_models.Filter(
+                must=[
+                    qdrant_models.FieldCondition(
+                        key="metadata.dataset",
+                        match=qdrant_models.MatchValue(value=dataset_name),
+                    )
+                ]
+            ),
+        )
+    )
 
     rag_chain = create_retrieval_chain(retriever, question_answer_chain)
     chain = rag_chain.pick("answer")
@@ -77,15 +100,12 @@ def main():
     main function for the Streamlit app.
     """
 
-    # collection_name = st.sidebar.text_input(
-    #     "請輸入要查詢的 Collection 名稱", value="DefaultCollection"
-    # )
-    client = QdrantClient(url="http://localhost:6333")
-    collection_list = client.get_collections()
-    collections = [i.name for i in collection_list.collections]
-    collection_name = st.sidebar.selectbox(
-        "請選擇要查詢的資料集名稱", options=collections
-    )
+    dataset = [
+        name
+        for name in os.listdir(UPLOAD_FOLDER)
+        if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))
+    ]
+    dataset_name = st.sidebar.selectbox("請選擇要查詢的資料集名稱", options=dataset)
 
     # session state
     if "chat_history" not in st.session_state:
@@ -115,7 +135,7 @@ def main():
                 get_response(
                     user_query=user_query,
                     chat_history=st.session_state.chat_history,
-                    collection_name=collection_name,
+                    dataset_name=dataset_name,
                 )
             )
 

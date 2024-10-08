@@ -1,3 +1,7 @@
 .DS_Store
 __pycache__/
 .env
+qdrant_storage/
+.pytest_cache/
+.venv/
+uploads/
