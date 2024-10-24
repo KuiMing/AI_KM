@@ -1,3 +1,16 @@
+## Set `.env` file
+
+```
+AZURE_OPENAI_ENDPOINT = <your endpoint of Azure OpenAI>
+AZURE_OPENAI_DEPLOYMENT_NAME = <your deployment name of gpt on Azure>
+AZURE_OPENAI_KEY = <your Azure OpenAI Key>
+AZURE_OPENAI_API_VERSION = <API version of Azure>
+AZURE_OPENAI_Embedding_DEPLOYMENT_NAME = <your deployment name of embedding model on Azure>
+OPENAI_API_KEY = <your OpenAI API key>
+SOURCE = "OpenAI"
+QDDRANT_URL = "http://localhost:6333"
+```
+
 ## Poetry
 
 ### Installation
