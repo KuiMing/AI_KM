@@ -4,7 +4,12 @@ This module contains the code to embed a PDF file into a Qdrant collection.
 
 from typing import List
 from langchain_community.document_loaders import PyPDFLoader
-from langchain_openai import AzureOpenAIEmbeddings, AzureChatOpenAI
+from langchain_openai import (
+    AzureOpenAIEmbeddings,
+    AzureChatOpenAI,
+    OpenAIEmbeddings,
+    ChatOpenAI,
+)
 from langchain_qdrant import QdrantVectorStore
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_core.prompts import ChatPromptTemplate
@@ -23,24 +28,32 @@ from qdrant_client.http.models import (
 
 
 class QdrantRAGBot:
-    def __init__(
-        self, config_path: str = ".env", qdrant_url: str = "http://localhost:6333"
-    ):
+    def __init__(self, config_path: str = ".env"):
         config = dotenv_values(config_path)
-        self.qdrant_url = qdrant_url
-        self.embedding_llm = AzureOpenAIEmbeddings(
-            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
-            azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
-            api_key=config.get("AZURE_OPENAI_KEY"),
-            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
-        )
-        self.generator_llm = AzureChatOpenAI(
-            azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
-            azure_deployment=config.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
-            openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
-            api_key=config.get("AZURE_OPENAI_KEY"),
-            streaming=True,
-        )
+        self.qdrant_url = config.get("QDRANT_URL")
+        source = config.get("SOURCE")
+        if source == "OpenAI":
+            self.embedding_llm = OpenAIEmbeddings(
+                api_key=config.get("OPENAI_API_KEY"), model="text-embedding-3-large"
+            )
+            self.generator_llm = ChatOpenAI(
+                api_key=config.get("OPENAI_API_KEY"),
+                model="gpt-4o",
+            )
+        else:
+            self.embedding_llm = AzureOpenAIEmbeddings(
+                azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
+                azure_deployment=config.get("AZURE_OPENAI_Embedding_DEPLOYMENT_NAME"),
+                api_key=config.get("AZURE_OPENAI_KEY"),
+                openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
+            )
+            self.generator_llm = AzureChatOpenAI(
+                azure_endpoint=config.get("AZURE_OPENAI_ENDPOINT"),
+                azure_deployment=config.get("AZURE_OPENAI_DEPLOYMENT_NAME"),
+                openai_api_version=config.get("AZURE_OPENAI_API_VERSION"),
+                api_key=config.get("AZURE_OPENAI_KEY"),
+                streaming=True,
+            )
 
     def embed_pdf(
         self,
