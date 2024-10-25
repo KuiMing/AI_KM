@@ -1,0 +1,31 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8500:8000"  # For FastAPI
+      - "8501:8501"  # For Streamlit
+    depends_on:
+      - qdrant
+    volumes:
+      - ./uploads:/app/uploads
+    networks:
+      - app-network
+
+  qdrant:
+    image: qdrant/qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

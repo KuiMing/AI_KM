@@ -8,7 +8,8 @@ AZURE_OPENAI_API_VERSION = <API version of Azure>
 AZURE_OPENAI_Embedding_DEPLOYMENT_NAME = <your deployment name of embedding model on Azure>
 OPENAI_API_KEY = <your OpenAI API key>
 SOURCE = "OpenAI"
-QDDRANT_URL = "http://localhost:6333"
+QDDRANT_URL = <your qdrant url>
+BOT_URL = <your streamlit url>
 ```
 
 ## Poetry
