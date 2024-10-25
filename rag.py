@@ -92,16 +92,72 @@ class QdrantRAGBot:
 
         loader = PyPDFLoader(pdf_path)
         pages = loader.load_and_split()
-        splits = text_splitter.create_documents(
-            texts=[page.page_content for page in pages],
-            metadatas=[
-                {
-                    "file_name": pdf_path,
-                    "dataset": dataset,
-                }
-                for page in pages
-            ],
-        )
+        try:
+            splits = text_splitter.create_documents(
+                texts=[page.page_content for page in pages],
+                metadatas=[
+                    {
+                        "file_name": pdf_path,
+                        "dataset": dataset,
+                    }
+                    for page in pages
+                ],
+            )
+        except Exception as e:
+            for i in range(len(pages)):
+                try:
+                    splits = text_splitter.create_documents(
+                        texts=[pages[i].page_content],
+                        metadatas=[
+                            {
+                                "file_name": pdf_path,
+                                "dataset": dataset,
+                            }
+                        ],
+                    )
+                except Exception as e:
+                    if i + 2 <= len(pages) - 1:
+                        splits = text_splitter.create_documents(
+                            texts=[
+                                pages[i].page_content
+                                + pages[i + 1].page_content
+                                + pages[i + 2].page_content
+                            ],
+                            metadatas=[
+                                {
+                                    "file_name": pdf_path,
+                                    "dataset": dataset,
+                                }
+                            ],
+                        )
+                    elif i + 2 == len(pages):
+                        splits = text_splitter.create_documents(
+                            texts=[
+                                pages[i - 1].page_content
+                                + pages[i].page_content
+                                + pages[i + 1].page_content
+                            ],
+                            metadatas=[
+                                {
+                                    "file_name": pdf_path,
+                                    "dataset": dataset,
+                                }
+                            ],
+                        )
+                    else:
+                        splits = text_splitter.create_documents(
+                            texts=[
+                                pages[i - 2].page_content
+                                + pages[i - 1].page_content
+                                + pages[i].page_content
+                            ],
+                            metadatas=[
+                                {
+                                    "file_name": pdf_path,
+                                    "dataset": dataset,
+                                }
+                            ],
+                        )
 
         qdrant = QdrantVectorStore.from_documents(
             splits,
