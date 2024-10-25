@@ -71,7 +71,7 @@ class QdrantRAGBot:
             overwrite: Whether to overwrite the existing collection with the same name.
         """
         if overwrite:
-            client = QdrantClient(url="http://localhost:6333")
+            client = QdrantClient(url=self.qdrant_url)
             # client.delete_collection(collection)
             filter_condition = Filter(
                 must=[

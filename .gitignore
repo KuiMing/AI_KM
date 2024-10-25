@@ -6,3 +6,5 @@ qdrant_storage/
 .venv/
 uploads/
 .deleted/
+*.pdf
+*.ipynb
