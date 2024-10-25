@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["ben.chen"]
 readme = "README.md"
-packages = [{include = "ai_km"}]
+packages = []
 
 [tool.poetry.dependencies]
 python = "^3.11"

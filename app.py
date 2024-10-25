@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from rag import QdrantRAGBot
+from dotenv import dotenv_values
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -100,4 +101,7 @@ async def upload_files(
 @app.get("/chat", response_class=HTMLResponse)
 async def chat(request: Request):
     """Chat page"""
-    return templates.TemplateResponse("chat_embed.html", {"request": request})
+    config = dotenv_values(".env")
+    return templates.TemplateResponse(
+        "chat_embed.html", {"request": request, "url": config.get("BOT_URL")}
+    )
