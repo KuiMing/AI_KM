@@ -11,6 +11,16 @@ SOURCE = "OpenAI"
 QDDRANT_URL = <your qdrant url>
 BOT_URL = <your streamlit url>
 ```
+## Docker Compose
+
+- start the services
+```
+docker compose up -d
+```
+- stop the services
+```
+docker compose down
+```
 
 ## Poetry
 

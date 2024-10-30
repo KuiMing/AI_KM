@@ -7,7 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
-
+RUN apt update && apt install ghostscript -y
 # Install poetry and add it to PATH
 ENV POETRY_HOME=/opt/poetry
 RUN curl -sSL https://install.python-poetry.org | python3 - \
@@ -19,7 +19,7 @@ COPY . .
 
 RUN poetry lock
 RUN poetry install --no-interaction --no-ansi
-
+RUN poetry run pip3.11 install camelot-py
 # Expose ports for FastAPI and Streamlit
 EXPOSE 8500
 EXPOSE 8501
