@@ -25,6 +25,8 @@ from qdrant_client.http.models import (
     FieldCondition,
     MatchValue,
 )
+import pandas as pd
+import camelot
 
 
 class QdrantRAGBot:
@@ -86,10 +88,26 @@ class QdrantRAGBot:
             client.delete(collection_name=collection, points_selector=filter_condition)
             print(f"Deleted file {pdf_path} from collection {collection}")
 
+        qdrant = self.embed_text(dataset, pdf_path, collection)
+        qdrant = self.embed_tables(dataset, pdf_path, collection)
+        return qdrant
+
+    def embed_text(
+        self,
+        dataset: str,
+        pdf_path: str,
+        collection: str = "test",
+    ):
+        """
+        Embeds the text from a PDF file into a Qdrant collection.
+        Args:
+            dataset: The name of the dataset to use for reference.
+            pdf_path: The path to the PDF file to embed.
+            collection: The name of the Qdrant collection to create.
+        """
         text_splitter = SemanticChunker(
             self.embedding_llm, breakpoint_threshold_type="gradient"
         )
-
         loader = PyPDFLoader(pdf_path)
         pages = loader.load_and_split()
         try:
@@ -223,3 +241,61 @@ class QdrantRAGBot:
         rag_chain = create_retrieval_chain(retriever, question_answer_chain)
         chain = rag_chain.pick("answer")
         return chain.stream({"input": user_query, "chat_history": chat_history})
+
+    @staticmethod
+    def merge_tables(tables):
+        merged_tables = []
+        merged_df = pd.DataFrame()
+        previous_table = None
+
+        def is_same_table(df1, df2):
+            return len(df1.columns) == len(df2.columns)
+
+        for table in tables[1:]:
+            df = table.df
+            if previous_table is not None and is_same_table(previous_table, df):
+                # 如果是同一個表格，則合併數據
+                df.columns = previous_table.columns
+                merged_df = pd.concat([merged_df, df], ignore_index=True)
+            else:
+                # 如果是新表格，設置新的列標題
+                merged_tables.append(merged_df)
+                merged_df = pd.DataFrame()
+                df.columns = df.iloc[0]
+                df = df.drop(0)
+                previous_table = df
+                merged_df = pd.concat([merged_df, df], ignore_index=True)
+        merged_tables.append(merged_df)
+        return merged_tables
+
+    def embed_tables(
+        self,
+        dataset: str,
+        pdf_path: str,
+        collection: str = "test",
+    ):
+        """
+        Embeds the tables into a Qdrant collection.
+        Args:
+            dataset: The name of the dataset to use for reference.
+            tables: The list of tables to embed.
+            collection: The name of the Qdrant collection to create.
+            pdf_path: The path to the PDF file to embed.
+        """
+        tables = camelot.read_pdf(pdf_path, pages="all")
+        merged_tables = self.merge_tables(tables)
+        texts = []
+        for df in merged_tables:
+            try:
+                texts.append(df.to_json(orient="records"))
+            except ValueError:
+                pass
+
+        qdrant = QdrantVectorStore.from_texts(
+            texts=texts,
+            embedding=self.embedding_llm,
+            url=self.qdrant_url,
+            collection_name=collection,
+            metadatas=[{"file_name": pdf_path, "dataset": dataset} for _ in texts],
+        )
+        return qdrant
