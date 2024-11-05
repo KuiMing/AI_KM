@@ -119,7 +119,28 @@
             border-radius: 4px;
         }
 
+        .efile-item {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 10px;
+            background-color: #f8f9fa;
+            margin: 5px auto;
+            border-radius: 4px;
+            max-width: 150px; 
+        }
+
         .submit-button {
+            background-color: #7b7b7b;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 20px 0;
+        }
+        .select-file {
             background-color: #7b7b7b;
             color: white;
             padding: 10px 20px;
@@ -132,6 +153,9 @@
 
         .submit-button:hover {
             background-color: #EC632B;
+        }
+        .select-file:hover {
+            background-color:#EC632B;
         }
 
         #loading-overlay {
@@ -188,6 +212,94 @@
             margin: 20px 0;
         }
     </style>
+    <script>
+        let selectedFiles = [];
+        
+        function updateFileList(dataset) {
+          const fileList = document.getElementById('current-files');
+          fetch(`/dataset-files/${dataset}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.files.length > 0) {
+                let filesHtml = '<h3>目前資料集檔案：</h3><div class="file-list">';
+                data.files.forEach(file => {
+                  filesHtml += `
+                    <div class="efile-item" onchange="toggleFileSelection('${file}')">
+                      <input type="checkbox" ${selectedFiles.includes(file) ? 'checked' : ''}>
+                      <span>${file}</span>
+                    </div>`;
+                });
+                filesHtml += '</div>';
+                fileList.innerHTML = filesHtml;
+              } else {
+                fileList.innerHTML = '<h3>目前資料集檔案：</h3><p>無檔案</p>';
+              }
+            });
+        }
+        
+        function toggleFileSelection(filename) {
+          const index = selectedFiles.indexOf(filename);
+          if (index === -1) {
+            selectedFiles.push(filename);
+          } else {
+            selectedFiles.splice(index, 1);
+          }
+          
+          const submitButton = document.querySelector('.submit-button');
+          const uploadarea = document.getElementById('upload-area');
+          if (selectedFiles.length > 0) {
+            submitButton.textContent = '刪除選中的檔案';
+            submitButton.classList.add('delete');
+            uploadarea.style.display = 'none';
+          } else {
+            submitButton.textContent = '上傳並轉換成向量';
+            submitButton.classList.remove('delete');
+            uploadarea.style.display = 'block';
+          }
+          
+          updateFileList(document.querySelector('[name="dataset_name"]').value);
+        }
+        
+        function handleSubmit(event) {
+          event.preventDefault();
+          const submitButton = document.querySelector('.submit-button');
+          const uploadarea = document.getElementById('upload-area');
+          const loadingOverlay = document.getElementById('loading-overlay');
+          if (submitButton.classList.contains('delete')) {
+            // Handle delete
+            const dataset = document.querySelector('[name="dataset_name"]').value;
+            const promises = selectedFiles.map(file => 
+              fetch(`/delete-dataset/${dataset}/${file}`, { method: 'GET' })
+            );
+            
+            Promise.all(promises)
+              .then(() => {
+                selectedFiles = [];
+                updateFileList(dataset);
+                submitButton.textContent = '上傳並轉換成向量';
+                submitButton.classList.remove('delete');
+                uploadarea.style.display = 'block';
+              });
+          } else {
+            // Handle upload (original functionality)
+            document.querySelector('form').submit();
+            loadingOverlay.style.display = 'flex';
+          }
+        }
+        
+        // Initialize the file list when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+          const dataset = document.querySelector('[name="dataset_name"]').value;
+          if (dataset) {
+            updateFileList(dataset);
+          }
+          
+          const submitButton = document.querySelector('.submit-button-container');
+          submitButton.innerHTML = `<button class="submit-button" onclick="handleSubmit(event)">上傳並轉換成向量</button>`;
+        });
+
+        
+    </script>
 </head>
 <body>
     <div class="banner">
@@ -218,7 +330,7 @@
                         name="dataset_name" 
                         required 
                         placeholder="選擇或輸入資料集名稱"
-                        onchange="loadDatasetFiles()"
+                        onchange="updateFileList(this.value)"
                     >
                     <datalist id="dataset-list">
                         {% for dataset in datasets %}
@@ -247,7 +359,7 @@
             或
             <br><br>
             <input type="file" id="file-input" name="files" multiple accept=".pdf" style="display: none">
-            <label for="file-input" class="submit-button">選擇檔案</label>
+            <label for="file-input" class="select-file">選擇檔案</label>
         </div>
 
         <div id="file-list"></div>
@@ -264,29 +376,32 @@
     <div id="loading-overlay">
         <img src="/static/loading.gif" alt="Loading...">
     </div>
-
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
         const fileList = document.getElementById('file-list');
-        const form = document.getElementById('upload-form');
-        const loadingOverlay = document.getElementById('loading-overlay');
+        const uploadForm = document.getElementById('upload-form');
+        let currentFiles = new DataTransfer();
 
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            uploadArea.style.backgroundColor = '#f8f9fa';
+            uploadArea.classList.add('dragover');
         });
 
         uploadArea.addEventListener('dragleave', (e) => {
             e.preventDefault();
-            uploadArea.style.backgroundColor = '';
+            uploadArea.classList.remove('dragover');
         });
 
         uploadArea.addEventListener('drop', (e) => {
             e.preventDefault();
-            uploadArea.style.backgroundColor = '';
-            const files = e.dataTransfer.files;
-            handleFiles(files);
+            uploadArea.classList.remove('dragover');
+            
+            const droppedFiles = e.dataTransfer.files;
+            handleFiles(droppedFiles);
+            
+            fileInput.files = currentFiles.files;
         });
 
         fileInput.addEventListener('change', (e) => {
@@ -294,53 +409,75 @@
         });
 
         function handleFiles(files) {
+            currentFiles = new DataTransfer();
             fileList.innerHTML = '';
-            for (const file of files) {
-                if (file.type === 'application/pdf') {
-                    const fileSize = (file.size / (1024 * 1024)).toFixed(2);
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'file-item';
-                    fileItem.innerHTML = `
-                        <span>${file.name} (${fileSize} MB)</span>
-                        <span class="remove-file" onclick="removeFile(this)">✕</span>
-                    `;
-                    fileList.appendChild(fileItem);
-                }
-            }
-        }
 
-        function removeFile(element) {
-            element.parentElement.remove();
-        }
-
-        async function loadDatasetFiles() {
-            const input = document.getElementById('dataset-input');
-            const fileList = document.getElementById('file-list-existing');
-            const dataset = input.value.trim();
-            
-            if (!dataset) {
-                fileList.innerHTML = '';
+            Array.from(files).forEach(file => {
+            if (file.size > 20 * 1024 * 1024) { 
+                alert(`檔案 ${file.name} 超過 20MB 限制`);
                 return;
             }
-            
-            try {
-                const response = await fetch(`/dataset-files/${dataset}`);
-                const data = await response.json();
-                
-                if (data.files.length === 0) {
-                    fileList.innerHTML = '<li>無檔案</li>';
-                    return;
-                }
-                
-                const filesHtml = data.files
-                    .map(file => `<li>${file}</li>`)
-                    .join('');
-                fileList.innerHTML = filesHtml;
-            } catch (error) {
-                console.error('Error loading dataset files:', error);
-                fileList.innerHTML = '<li>載入檔案清單失敗</li>';
-            }
+            currentFiles.items.add(file);
+
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            fileList.appendChild(fileItem);
+            });
+
+            fileInput.files = currentFiles.files;
         }
+
+        document.querySelector('.submit-button-container').addEventListener('click', async () => {
+            const submitButton = document.querySelector('.submit-button');
+            if (fileInput.files.length === 0 && submitButton.classList.contains('delete') === false) {
+            alert('請選擇要上傳的檔案');
+            return;
+            }
+
+            const formData = new FormData();
+            
+            formData.append('dataset_name', document.getElementById('dataset_name').value);
+            formData.append('overwrite', document.getElementById('overwrite').checked);
+            
+            for (let file of fileInput.files) {
+            formData.append('files[]', file);
+            }
+
+            try {
+            document.getElementById('loading-overlay').style.display = 'block';
+            
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error('上傳失敗');
+            }
+
+            const result = await response.json();
+            if (result.success) {
+                window.location.reload();
+            } else {
+                alert(result.error || '上傳失敗');
+            }
+            } catch (error) {
+            alert('上傳過程發生錯誤: ' + error.message);
+            } finally {
+            document.getElementById('loading-overlay').style.display = 'none';
+            }
+        });
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        });
+    </script>
 
         form.addEventListener('submit', () => {
             loadingOverlay.style.display = 'flex';

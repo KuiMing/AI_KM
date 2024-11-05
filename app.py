@@ -45,8 +45,22 @@ async def read_form(request: Request):
         if os.path.isdir(os.path.join(UPLOAD_FOLDER, name))
     ]
     return templates.TemplateResponse(
-        "upload.html", {"request": request, "datasets": datasets}
+        "upload.html", {"request": request, "datasets": datasets, "error": None}
     )
+
+
+@app.get("/delete-dataset/{dataset_name}/{file_name}")
+async def delete_dataset(dataset_name: str, file_name: str):
+    """Delete a dataset"""
+    path = os.path.join(UPLOAD_FOLDER, dataset_name, file_name)
+
+    if os.path.exists(path):
+        os.remove(path)
+    rag_bot.delete_dataset(dataset_name, path)
+    if not os.listdir(os.path.join(UPLOAD_FOLDER, dataset_name)):
+        os.rmdir(os.path.join(UPLOAD_FOLDER, dataset_name))
+
+    return JSONResponse({"status": "success"})
 
 
 @app.get("/dataset-files/{dataset_name}")
