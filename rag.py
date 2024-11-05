@@ -299,3 +299,26 @@ class QdrantRAGBot:
             metadatas=[{"file_name": pdf_path, "dataset": dataset} for _ in texts],
         )
         return qdrant
+
+    def delete_dataset(
+        self,
+        dataset: str,
+        pdf_path: str,
+        collection: str = "test",
+    ):
+        """
+        Deletes the dataset from the Qdrant collection.
+        Args:
+            dataset_name: The name of the dataset to delete.
+        """
+        client = QdrantClient(url=self.qdrant_url)
+        filter_condition = Filter(
+            must=[
+                FieldCondition(key="metadata.dataset", match=MatchValue(value=dataset)),
+                FieldCondition(
+                    key="metadata.file_name", match=MatchValue(value=pdf_path)
+                ),
+            ]
+        )
+        client.delete(collection_name=collection, points_selector=filter_condition)
+        print(f"Deleted dataset {dataset} from collection")
