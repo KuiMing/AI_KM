@@ -5,7 +5,7 @@ FastAPI app for uploading PDF files and embedding them into Qdrant.
 from typing import List, Optional
 import os
 from fastapi import FastAPI, Request, File, UploadFile, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from rag import QdrantRAGBot
@@ -47,6 +47,17 @@ async def read_form(request: Request):
     return templates.TemplateResponse(
         "upload.html", {"request": request, "datasets": datasets}
     )
+
+
+@app.get("/dataset-files/{dataset_name}")
+async def get_dataset_files(dataset_name: str):
+    """Get list of files in a dataset"""
+    folder = os.path.join(UPLOAD_FOLDER, dataset_name)
+    if not os.path.exists(folder):
+        return JSONResponse({"files": []})
+
+    files = [f for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
+    return JSONResponse({"files": files})
 
 
 @app.post("/upload", response_class=HTMLResponse)
