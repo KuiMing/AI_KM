@@ -2,10 +2,12 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>上傳 PDF 檔案 - OneLab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OneLab - 上傳 PDF 檔案</title>
     <style>
         body {
             font-family: Arial, sans-serif;
+            text-align: center;
             margin: 0;
             padding: 0;
         }
@@ -38,234 +40,311 @@
         .tabs a.active {
             background-color: #ccc;
         }
-        .overwrite-checkbox {
-            text-align: center;
-            margin-top: 20px;
+
+        .tablink {
+            text-decoration: none;
+            color: #495057;
+            padding: 10px 20px;
+            margin: 0 5px;
         }
-        #upload-area {
-            border: 2px dashed #ccc;
-            width: 50%;
-            margin: 20px auto;
-            padding: 20px;
-            text-align: center;
+
+        .tablink.active {
+            color: #EC632B;
+            border-bottom: 2px solid #EC632B;
         }
-        #upload-area.hover {
-            border-color: #333;
-        }
-        #file-input {
-            display: none;
-        }
-        #upload-area p {
-            margin: 0;
-            font-size: 16px;
-        }
-        #max-size {
-            text-align: center;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-            text-align: center;
-        }
+
         .dataset-input {
-            width: 50%;
-            margin: 20px auto;
+            margin: 20px auto;  /* Changed from 20px 0 to 20px auto */
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            max-width: 1000px;  /* Added max-width */
         }
 
         .dataset-row {
             display: flex;
-            align-items: center;
+            flex-direction: column;  /* Changed from row to column */
+            align-items: center;     /* Center items horizontally */
+            gap: 15px;              /* Adjusted gap */
         }
 
         .dataset-name {
-            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
-        .dataset-name label {
-            margin-right: 5px;
-        }
-
-        .dataset-name input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
+        .dataset-name input[list] {
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            width: 200px;
         }
 
         .overwrite-checkbox {
             display: flex;
             align-items: center;
-            margin-left: 40px;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        #upload-area {
+            border: 2px dashed #ced4da;
+            padding: 40px;
+            text-align: center;
+            margin: 20px auto;  /* Changed from 20px 0 to 20px auto */
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            max-width: 1000px;  /* Added max-width */
+        }
+
+        #upload-area:hover {
+            background-color: #f8f9fa;
+        }
+
+        #file-list {
+            margin: 20px auto;  /* Changed from 20px 0 to 20px auto */
+            max-width: 800px;   /* Added max-width */
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: #f8f9fa;
+            margin: 5px 0;
+            border-radius: 4px;
         }
 
         .submit-button {
-            margin-top: 20px;
-            text-align: center;
-        }
-        .submit-button button {
+            background-color: #7b7b7b;
+            color: white;
             padding: 10px 20px;
-            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 20px 0;
         }
-        #file-list {
-            margin-top: 20px;
-            text-align: center;
+
+        .submit-button:hover {
+            background-color: #EC632B;
         }
-        #file-list ul {
-            list-style-type: none;
-            padding: 0;
-        }
-        #file-list li {
-            margin: 5px 0;
-        }
+
         #loading-overlay {
-            display: none; 
+            display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             background-color: rgba(255, 255, 255, 0.8);
+            justify-content: center;
+            align-items: center;
             z-index: 1000;
+        }
+
+        .dataset-files {
+            margin: 20px auto;  /* Changed from 20px 0 to 20px auto */
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            max-width: 1000px;  /* Added max-width */
+        }
+
+        #file-list-existing {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #file-list-existing li {
+            padding: 8px;
+            margin: 4px 0;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+
+        .error-message {
+            color: #dc3545;
+            padding: 10px;
+            margin: 10px auto;  /* Changed from 10px 0 to 10px auto */
+            background-color: #f8d7da;
+            border-radius: 4px;
+            max-width: 1000px;  /* Added max-width */
+        }
+
+        /* Center the submit button container */
+        .submit-button-container {
             text-align: center;
         }
-        #loading-overlay img {
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        #loading-overlay p {
-            position: relative;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 20px;
-            color: #333;
+
+        /* Center the max file size text */
+        .max-file-size {
+            text-align: center;
+            margin: 20px 0;
         }
     </style>
 </head>
 <body>
+    <div class="banner">
+        <h1>OneLab- AI Knowledge Management</h1>
+    </div>
 
-<div class="banner">
-    <h1>OneLab- AI Knowledge Management</h1>
-</div>
+    <div class="tabs">
+        <a href="/" class="tablink">Home</a>
+        <a href="/upload" class="tablink active">上傳 PDF 檔案</a>
+        <a href="/chat" class="tablink">AI 機器人</a>
+    </div>
 
-<div class="tabs">
-    <a href="/" class="tablink">Home</a>
-    <a href="/upload" class="tablink active">上傳 PDF 檔案</a>
-    <a href="/chat" class="tablink">AI 機器人</a>
-</div>
+    {% if error %}
+    <div class="error-message">
+        {{ error }}
+    </div>
+    {% endif %}
 
-{% if error %}
-<p class="error">{{ error }}</p>
-{% endif %}
+    <form action="/upload" method="post" enctype="multipart/form-data" id="upload-form">
+        <div class="dataset-input">
+            <div class="dataset-row">
+                <div class="dataset-name">
+                    資料集名稱：
+                    <input 
+                        type="text" 
+                        list="dataset-list" 
+                        id="dataset-input" 
+                        name="dataset_name" 
+                        required 
+                        placeholder="選擇或輸入資料集名稱"
+                        onchange="loadDatasetFiles()"
+                    >
+                    <datalist id="dataset-list">
+                        {% for dataset in datasets %}
+                        <option value="{{ dataset }}">
+                        {% endfor %}
+                    </datalist>
+                </div>
 
-<form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
-
-    <div class="dataset-input">
-        <div class="dataset-row">
-            <div class="dataset-name">
-                <label for="dataset-name">資料集名稱：</label>
-                <input list="dataset-names" type="text" id="dataset-name" name="dataset_name" placeholder="請自行定義資料集名稱" required>
-                <datalist id="dataset-names">
-                    {% for dataset in datasets %}
-                        <option value="{{ dataset }}">{{ dataset }}</option>
-                    {% endfor %}
-                </datalist>
-            </div>
-            <div class="overwrite-checkbox">
-                <input type="checkbox" id="overwrite" name="overwrite" value="yes">
-                <label for="overwrite">覆蓋現有的資料集</label>
+                <div class="overwrite-checkbox">
+                    <input type="checkbox" id="overwrite" name="overwrite" value="yes">
+                    <label for="overwrite">覆蓋現有的資料集</label>
+                </div>
             </div>
         </div>
+
+        <div class="dataset-files">
+            <div id="current-files">
+                <h3>目前資料集檔案：</h3>
+                <ul id="file-list-existing"></ul>
+            </div>
+        </div>
+
+        <div id="upload-area">
+            將檔案拖曳到此處上傳
+            <br><br>
+            或
+            <br><br>
+            <input type="file" id="file-input" name="files" multiple accept=".pdf" style="display: none">
+            <label for="file-input" class="submit-button">選擇檔案</label>
+        </div>
+
+        <div id="file-list"></div>
+
+        <div class="submit-button-container">
+            <button type="submit" class="submit-button">上傳並轉換成向量</button>
+        </div>
+    </form>
+
+    <div class="max-file-size">
+        最大上傳檔案大小：20MB
     </div>
-    <div id="upload-area">
-        <p>將檔案拖曳到此處上傳</p>
-        <p>或</p>
-        <button type="button" onclick="document.getElementById('file-input').click();">選擇檔案</button>
-        <input type="file" id="file-input" name="files" multiple accept=".pdf">
+
+    <div id="loading-overlay">
+        <img src="/static/loading.gif" alt="Loading...">
     </div>
-    
-    <div id="file-list"></div>
-    <div class="submit-button">
-        <button type="submit">上傳並轉換成向量</button>
-    </div>
-</form>
 
-<p id="max-size">最大上傳檔案大小：20MB</p>
-<div id="loading-overlay">
-    <img src="/static/loading.gif" alt="Loading...">
-</div>
+    <script>
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const fileList = document.getElementById('file-list');
+        const form = document.getElementById('upload-form');
+        const loadingOverlay = document.getElementById('loading-overlay');
 
-<script>
-    var uploadArea = document.getElementById('upload-area');
-    var fileInput = document.getElementById('file-input');
-    var form = document.getElementById('upload-form');
-    var fileList = document.getElementById('file-list');
-    var loadingOverlay = document.getElementById('loading-overlay');
-    var submitButton = document.querySelector('.submit-button button');
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '#f8f9fa';
+        });
 
+        uploadArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '';
+        });
 
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(function(eventName) {
-        uploadArea.addEventListener(eventName, preventDefaults, false);
-        document.body.addEventListener(eventName, preventDefaults, false);
-    });
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.backgroundColor = '';
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
 
-    ['dragenter', 'dragover'].forEach(function(eventName) {
-        uploadArea.addEventListener(eventName, highlight, false);
-    });
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
 
-    ['dragleave', 'drop'].forEach(function(eventName) {
-        uploadArea.addEventListener(eventName, unhighlight, false);
-    });
-
-    uploadArea.addEventListener('drop', handleDrop, false);
-
-    function preventDefaults (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    function highlight(e) {
-        uploadArea.classList.add('hover');
-    }
-
-    function unhighlight(e) {
-        uploadArea.classList.remove('hover');
-    }
-
-    function handleDrop(e) {
-        var dt = e.dataTransfer;
-        var files = dt.files;
-
-        fileInput.files = files;
-        updateFileList();
-    }
-
-    function updateFileList() {
-        var files = fileInput.files;
-        fileList.innerHTML = '';
-        if (files.length === 0) {
-            fileList.innerHTML = '<p>尚未選擇檔案</p>';
-        } else {
-            var list = document.createElement('ul');
-            for (var i = 0; i < files.length; i++) {
-                var item = document.createElement('li');
-                item.textContent = files[i].name;
-                list.appendChild(item);
+        function handleFiles(files) {
+            fileList.innerHTML = '';
+            for (const file of files) {
+                if (file.type === 'application/pdf') {
+                    const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                        <span>${file.name} (${fileSize} MB)</span>
+                        <span class="remove-file" onclick="removeFile(this)">✕</span>
+                    `;
+                    fileList.appendChild(fileItem);
+                }
             }
-            fileList.appendChild(list);
         }
-    }
 
-    fileInput.addEventListener('change', function() {
-        updateFileList();
-    });
+        function removeFile(element) {
+            element.parentElement.remove();
+        }
 
-    form.addEventListener('submit', function(e) {
-        loadingOverlay.style.display = 'block';
+        async function loadDatasetFiles() {
+            const input = document.getElementById('dataset-input');
+            const fileList = document.getElementById('file-list-existing');
+            const dataset = input.value.trim();
+            
+            if (!dataset) {
+                fileList.innerHTML = '';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/dataset-files/${dataset}`);
+                const data = await response.json();
+                
+                if (data.files.length === 0) {
+                    fileList.innerHTML = '<li>無檔案</li>';
+                    return;
+                }
+                
+                const filesHtml = data.files
+                    .map(file => `<li>${file}</li>`)
+                    .join('');
+                fileList.innerHTML = filesHtml;
+            } catch (error) {
+                console.error('Error loading dataset files:', error);
+                fileList.innerHTML = '<li>載入檔案清單失敗</li>';
+            }
+        }
 
-        submitButton.disabled = true;
-    });
-
-</script>
-
+        form.addEventListener('submit', () => {
+            loadingOverlay.style.display = 'flex';
+        });
+    </script>
 </body>
 </html>
