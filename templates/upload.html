@@ -420,11 +420,17 @@
 
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
-            fileItem.textContent = `${file.name} (${formatFileSize(file.size)})`;
+            fileItem.innerHTML = `
+                        <span>${file.name} (${formatFileSize(file.size)})</span>
+                        <span class="remove-file" onclick="removeFile(this)">✕</span>
+                    `;
             fileList.appendChild(fileItem);
             });
 
             fileInput.files = currentFiles.files;
+        }
+        function removeFile(element) {
+            element.parentElement.remove();
         }
 
         document.querySelector('.submit-button-container').addEventListener('click', async () => {
