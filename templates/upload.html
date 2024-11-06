@@ -376,6 +376,9 @@
         <img src="/static/loading.gif" alt="Loading...">
     </div>
     <script>
+        function removeFile(element) {
+            element.parentElement.remove();
+        };
         document.addEventListener('DOMContentLoaded', function() {
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
@@ -428,10 +431,7 @@
             });
 
             fileInput.files = currentFiles.files;
-        }
-        function removeFile(element) {
-            element.parentElement.remove();
-        }
+        };
 
         document.querySelector('.submit-button-container').addEventListener('click', async () => {
             const submitButton = document.querySelector('.submit-button');
